@@ -1,14 +1,14 @@
 [
 {
-  "modid": "${mod_id}",
-  "name": "${mod_name}",
+  "modid": "${modid}",
+  "name": "${modname}",
   "description": "Players stay in the world when they log out.",
-  "version": "${mod_version}",
-  "mcversion": "${mod_minecraft_version}",
-  "url": "https://www.curseforge.com/minecraft/mc-mods/persistent-players",
-  "updateUrl": "https://maxhenkel.de/update/persistent_players.json",
-  "authorList": ["${mod_vendor}"],
-  "credits": "",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["MrNorwood"],
+  "credits": "Max Heinkel",
   "logoFile": "",
   "screenshots": [],
   "dependencies": []
