@@ -1,1 +1,0 @@
-- Fixed exception when logging out
