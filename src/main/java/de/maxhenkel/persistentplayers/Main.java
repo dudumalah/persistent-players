@@ -7,13 +7,12 @@ import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 
-@Mod(modid = Main.MODID, version = Main.VERSION, acceptedMinecraftVersions = Main.MC_VERSION, updateJSON = Main.UPDATE_JSON)
+@Mod(modid = Main.MODID, version = Main.VERSION, acceptedMinecraftVersions = Main.MC_VERSION)
 public class Main {
 
-    public static final String MODID = "persistent_players";
-    public static final String VERSION = "1.12.2-1.0.2";
+    public static final String MODID = Tags.MODID;
+    public static final String VERSION = Tags.VERSION;
     public static final String MC_VERSION = "[1.12.2]";
-    public static final String UPDATE_JSON = "https://maxhenkel.de/update/persistent_players.json";
 
     @Mod.Instance
     private static Main instance;
