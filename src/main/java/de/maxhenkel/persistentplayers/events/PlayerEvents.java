@@ -47,17 +47,33 @@ public class PlayerEvents {
 
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.NORMAL)
     public void playerLogOut(PlayerEvent.PlayerLoggedOutEvent event) {
         if (!(event.player instanceof EntityPlayerMP)) {
+            if (Config.betterLogging) {
+                Log.e("Entity is not EntityPlayerMP.");
+            }
             return;
         }
         EntityPlayerMP player = (EntityPlayerMP) event.player;
         if (!shouldPersist(player)) {
+            if (Config.betterLogging) {
+                Log.e("Player is not Persistant player");
+            }
             return;
         }
+        PersistentPlayerEntity persistentPlayer = PersistentPlayerEntity.fromPlayer(player);
         player.dismountRidingEntity();
-        player.world.spawnEntity(PersistentPlayerEntity.fromPlayer(player));
+        player.world.spawnEntity(persistentPlayer);
+        if (Config.betterLogging){
+            WorldServer world = player.getServerWorld().getMinecraftServer().getWorld(0);
+            Optional<PersistentPlayerEntity> persistentPlayerCreated = findPersistentPlayer(world, player.getUniqueID());
+            if (persistentPlayerCreated.isPresent()){
+                Log.i("Overworld: Persistent player successfully created!");
+            }else{
+                Log.e("Failed to create persistent player");
+            }
+        }
     }
 
     public boolean shouldPersist(EntityPlayerMP player) {

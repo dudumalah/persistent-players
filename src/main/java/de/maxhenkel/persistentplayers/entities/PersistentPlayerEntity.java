@@ -3,8 +3,10 @@ package de.maxhenkel.persistentplayers.entities;
 import com.google.common.base.Optional;
 import com.mojang.authlib.GameProfile;
 import de.maxhenkel.persistentplayers.Config;
+import de.maxhenkel.persistentplayers.Log;
 import de.maxhenkel.persistentplayers.proxy.CommonProxy;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.EntityAILookIdle;
 import net.minecraft.entity.ai.EntityAISwimming;
@@ -29,7 +31,7 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.UUID;
 
-public class PersistentPlayerEntity extends EntityMob {
+public class PersistentPlayerEntity extends EntityCreature {
 
     private static final DataParameter<Optional<UUID>> ID = EntityDataManager.createKey(PersistentPlayerEntity.class, DataSerializers.OPTIONAL_UNIQUE_ID);
     private static final DataParameter<String> NAME = EntityDataManager.createKey(PersistentPlayerEntity.class, DataSerializers.STRING);
@@ -46,9 +48,13 @@ public class PersistentPlayerEntity extends EntityMob {
         }
     }
 
-    @Override
     public boolean isPlayerSleeping() {
         return Config.offlinePlayersSleep;
+    }
+
+    protected boolean canDespawn()
+    {
+        return false;
     }
 
     public static PersistentPlayerEntity fromPlayer(EntityPlayer player) {
@@ -71,6 +77,7 @@ public class PersistentPlayerEntity extends EntityMob {
             Field fire = ObfuscationReflectionHelper.findField(Entity.class, "field_190534_ay");
             persistentPlayer.setFire((Integer) fire.get(player));
         } catch (Exception e) {
+            Log.e("Unable to set player on fire on join");
             e.printStackTrace();
         }
         player.getActivePotionEffects().forEach(persistentPlayer::addPotionEffect);
@@ -89,13 +96,10 @@ public class PersistentPlayerEntity extends EntityMob {
             e.printStackTrace();
         }
         getActivePotionEffects().forEach(player::addPotionEffect);
-        player.setPositionAndRotation(posX, posY, posZ, rotationYaw, rotationPitch);
-        player.rotationYaw = rotationYaw;
-        player.prevRotationYaw = prevRotationYaw;
-        player.rotationPitch = rotationPitch;
-        player.prevRotationPitch = prevRotationPitch;
-        player.rotationYawHead = rotationYawHead;
-        player.prevRotationYawHead = prevRotationYawHead;
+        player.connection.setPlayerLocation(posX, posY, posZ, rotationYaw, rotationPitch);
+        player.getServerWorld().getMinecraftServer().addScheduledTask(() -> {
+            player.setPositionAndUpdate(posX, posY, posZ);
+        });
     }
 
     public static byte getModel(EntityPlayer player) {
@@ -114,6 +118,9 @@ public class PersistentPlayerEntity extends EntityMob {
         super.onDeath(cause);
 
         CommonProxy.PLAYER_EVENTS.updatePersistentPlayerLocation(this, p -> {
+            if(Config.betterLogging){
+                Log.i("Persistent player killed");
+            }
             p.setHealth(0F);
             for (int i = 0; i < p.inventory.getSizeInventory(); i++) {
                 ItemStack stackInSlot = p.inventory.getStackInSlot(i);

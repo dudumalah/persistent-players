@@ -17,12 +17,19 @@ import net.minecraft.entity.player.EnumPlayerModelParts;
 import net.minecraft.util.ResourceLocation;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
-
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 public class PlayerRenderer extends RenderLivingBase<PersistentPlayerEntity> {
 
-    private ModelPlayer playerModel;
-    private ModelPlayer playerModelSmallArms;
+    private final ModelPlayer playerModel;
+    private final ModelPlayer playerModelSmallArms;
+
+
+    private static final Map<UUID, GameProfile> PROFILE_CACHE = new ConcurrentHashMap<>();
+    private static final Set<UUID> PENDING_FETCHES = ConcurrentHashMap.newKeySet();
+
 
     public PlayerRenderer(RenderManager renderManager) {
         super(renderManager, null, 0.5F);
@@ -62,12 +69,40 @@ public class PlayerRenderer extends RenderLivingBase<PersistentPlayerEntity> {
 
     public static ResourceLocation getSkin(GameProfile gameProfile) {
         Minecraft minecraft = Minecraft.getMinecraft();
-        Map<MinecraftProfileTexture.Type, MinecraftProfileTexture> map = minecraft.getSkinManager().loadSkinFromCache(gameProfile);
+        UUID uuid = gameProfile.getId();
 
+        GameProfile cachedProfile = PROFILE_CACHE.get(uuid);
+        if (cachedProfile != null) {
+            return getSkinFromProfile(minecraft, cachedProfile);
+        }
+
+        if (gameProfile.getProperties().containsKey("textures")) {
+            PROFILE_CACHE.put(uuid, gameProfile);
+            return getSkinFromProfile(minecraft, gameProfile);
+        }
+
+        if (!PENDING_FETCHES.contains(uuid)) {
+            PENDING_FETCHES.add(uuid);
+            CompletableFuture.runAsync(() -> {
+                try {
+                    GameProfile filledProfile = minecraft.getSessionService().fillProfileProperties(gameProfile, true);
+                    PROFILE_CACHE.put(uuid, filledProfile);
+                } catch (Exception e) {
+                } finally {
+                    PENDING_FETCHES.remove(uuid);
+                }
+            });
+        }
+
+        return DefaultPlayerSkin.getDefaultSkin(uuid);
+    }
+
+    private static ResourceLocation getSkinFromProfile(Minecraft minecraft, GameProfile profile) {
+        Map<MinecraftProfileTexture.Type, MinecraftProfileTexture> map = minecraft.getSkinManager().loadSkinFromCache(profile);
         if (map.containsKey(MinecraftProfileTexture.Type.SKIN)) {
             return minecraft.getSkinManager().loadSkin(map.get(MinecraftProfileTexture.Type.SKIN), MinecraftProfileTexture.Type.SKIN);
         } else {
-            return DefaultPlayerSkin.getDefaultSkin(gameProfile.getId());
+            return DefaultPlayerSkin.getDefaultSkin(profile.getId());
         }
     }
 
