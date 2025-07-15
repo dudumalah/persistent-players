@@ -4,13 +4,13 @@ import com.google.common.base.Optional;
 import com.mojang.authlib.GameProfile;
 import de.maxhenkel.persistentplayers.Config;
 import de.maxhenkel.persistentplayers.Log;
+import de.maxhenkel.persistentplayers.compat.MWSlots;
 import de.maxhenkel.persistentplayers.proxy.CommonProxy;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.EntityAILookIdle;
 import net.minecraft.entity.ai.EntityAISwimming;
-import net.minecraft.entity.monster.EntityMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.EnumPlayerModelParts;
@@ -25,6 +25,7 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ITeleporter;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
 import java.lang.reflect.Field;
@@ -118,14 +119,18 @@ public class PersistentPlayerEntity extends EntityCreature {
         super.onDeath(cause);
 
         CommonProxy.PLAYER_EVENTS.updatePersistentPlayerLocation(this, p -> {
-            if(Config.betterLogging){
-                Log.i("Persistent player killed");
-            }
             p.setHealth(0F);
+            if(Loader.isModLoaded("modularwarfare")){
+                MWSlots mwslots = new MWSlots();
+                mwslots.mwDropSlots(p);
+            }
             for (int i = 0; i < p.inventory.getSizeInventory(); i++) {
                 ItemStack stackInSlot = p.inventory.getStackInSlot(i);
                 p.inventory.removeStackFromSlot(i);
                 entityDropItem(stackInSlot, 0F);
+            }
+            if(Config.betterLogging){
+                Log.i("Persistent player killed");
             }
         });
     }

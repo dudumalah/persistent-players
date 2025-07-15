@@ -8,6 +8,7 @@ import de.maxhenkel.persistentplayers.events.PlayerEvents;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
@@ -36,7 +37,11 @@ public class CommonProxy {
     }
 
     public void postinit(FMLPostInitializationEvent event) {
-
+        if(Loader.isModLoaded("modularwarfare") && Config.betterLogging){
+            Log.w("Persistent Players: Modular Warfare detected!");
+        }else{
+            Log.w("Persistent Players: Modular Warfare not detected. If you have MW installed and got this message something is wrong!");
+        }
     }
 
 }
