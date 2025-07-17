@@ -126,6 +126,7 @@ public class PlayerRenderer extends RenderLivingBase<PersistentPlayerEntity> {
         addLayer(new LayerHeldItem(this));
         addLayer(new LayerElytra(this));
         addLayer(new LayerCustomHead(modelPlayer.bipedHead));
+
     }
 
     @Override

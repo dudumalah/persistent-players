@@ -58,7 +58,7 @@ public class PlayerEvents {
         EntityPlayerMP player = (EntityPlayerMP) event.player;
         if (!shouldPersist(player)) {
             if (Config.betterLogging) {
-                Log.e("Player is not Persistant player");
+                Log.e("Player is not Persistent player");
             }
             return;
         }
@@ -71,7 +71,7 @@ public class PlayerEvents {
             if (persistentPlayerCreated.isPresent()){
                 Log.i("Overworld: Persistent player successfully created!");
             }else{
-                Log.e("Failed to create persistent player");
+                Log.e("Overworld: Failed to create persistent player!");
             }
         }
     }
