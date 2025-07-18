@@ -145,8 +145,8 @@ public class PersistentPlayerEntity extends EntityCreature {
         CommonProxy.PLAYER_EVENTS.updatePersistentPlayerLocation(this, p -> {
             p.setHealth(0F);
             if(Loader.isModLoaded("modularwarfare")){
-                MWCompat mwslots = new MWCompat();
-                mwslots.mwDropSlots(p);
+                MWCompat mwCompat = new MWCompat();
+                mwCompat.mwDropSlots(p);
             }
             for (int i = 0; i < p.inventory.getSizeInventory(); i++) {
                 ItemStack stackInSlot = p.inventory.getStackInSlot(i);
