@@ -1,5 +1,7 @@
 package de.maxhenkel.persistentplayers.entities;
 
+import com.modularwarfare.client.model.FakeLayerBipedArmor;
+import com.modularwarfare.client.model.layers.RenderLayerHeldGun;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 import net.minecraft.client.Minecraft;
@@ -15,6 +17,7 @@ import net.minecraft.client.renderer.entity.layers.LayerHeldItem;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.entity.player.EnumPlayerModelParts;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.fml.common.Loader;
 
 import java.util.Map;
 import java.util.Set;
@@ -25,11 +28,8 @@ public class PlayerRenderer extends RenderLivingBase<PersistentPlayerEntity> {
 
     private final ModelPlayer playerModel;
     private final ModelPlayer playerModelSmallArms;
-
-
     private static final Map<UUID, GameProfile> PROFILE_CACHE = new ConcurrentHashMap<>();
     private static final Set<UUID> PENDING_FETCHES = ConcurrentHashMap.newKeySet();
-
 
     public PlayerRenderer(RenderManager renderManager) {
         super(renderManager, null, 0.5F);
@@ -60,7 +60,7 @@ public class PlayerRenderer extends RenderLivingBase<PersistentPlayerEntity> {
         } else {
             mainModel = playerModel;
             setModelVisibilities(entity, playerModel);
-            initLayers(playerModel);
+            initLayers(playerModelSmallArms);
         }
 
         super.doRender(entity, x, y, z, entityYaw, partialTicks);
@@ -126,7 +126,11 @@ public class PlayerRenderer extends RenderLivingBase<PersistentPlayerEntity> {
         addLayer(new LayerHeldItem(this));
         addLayer(new LayerElytra(this));
         addLayer(new LayerCustomHead(modelPlayer.bipedHead));
-
+        //MW layers
+        if(Loader.isModLoaded("modularwarfare")){
+            addLayer(new RenderLayerHeldGun(this));
+            addLayer(new FakeLayerBipedArmor(this));
+        }
     }
 
     @Override
