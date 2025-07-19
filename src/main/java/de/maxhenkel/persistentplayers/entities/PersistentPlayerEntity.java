@@ -1,16 +1,19 @@
 package de.maxhenkel.persistentplayers.entities;
 
 import com.google.common.base.Optional;
+import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
+import com.modularwarfare.common.capability.extraslots.ExtraContainer;
+import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
 import com.mojang.authlib.GameProfile;
 import de.maxhenkel.persistentplayers.Config;
 import de.maxhenkel.persistentplayers.Log;
+import de.maxhenkel.persistentplayers.compat.MWCompat;
 import de.maxhenkel.persistentplayers.proxy.CommonProxy;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.EntityAILookIdle;
 import net.minecraft.entity.ai.EntityAISwimming;
-import net.minecraft.entity.monster.EntityMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.EnumPlayerModelParts;
@@ -21,10 +24,12 @@ import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.DataSerializers;
 import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ITeleporter;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
 import java.lang.reflect.Field;
@@ -36,7 +41,6 @@ public class PersistentPlayerEntity extends EntityCreature {
     private static final DataParameter<Optional<UUID>> ID = EntityDataManager.createKey(PersistentPlayerEntity.class, DataSerializers.OPTIONAL_UNIQUE_ID);
     private static final DataParameter<String> NAME = EntityDataManager.createKey(PersistentPlayerEntity.class, DataSerializers.STRING);
     private static final DataParameter<Byte> PLAYER_MODEL = EntityDataManager.createKey(PersistentPlayerEntity.class, DataSerializers.BYTE);
-
     public PersistentPlayerEntity(World world) {
         super(world);
         Arrays.fill(inventoryArmorDropChances, 0F);
@@ -63,6 +67,27 @@ public class PersistentPlayerEntity extends EntityCreature {
         persistentPlayer.setPlayerUUID(player.getUniqueID());
         for (EntityEquipmentSlot equipmentSlot : EntityEquipmentSlot.values()) {
             persistentPlayer.setItemStackToSlot(equipmentSlot, player.getItemStackFromSlot(equipmentSlot).copy());
+        }
+        if(Loader.isModLoaded("modularwarfare")){
+            IExtraItemHandler playerHandler = player.getCapability(CapabilityExtra.CAPABILITY, (EnumFacing) null);
+            IExtraItemHandler persistentPlayerHandler = persistentPlayer.getCapability(CapabilityExtra.CAPABILITY, (EnumFacing) null);
+            if (playerHandler != null && persistentPlayerHandler != null){
+                if (persistentPlayerHandler instanceof ExtraContainer) {
+                    ((ExtraContainer) persistentPlayerHandler).setPlayer(player);
+                }
+                for (int i = 0; i < playerHandler.getSlots(); i++) {
+                    persistentPlayerHandler.setStackInSlot(i, playerHandler.getStackInSlot(i));
+                }
+            } else if (Config.betterLogging) {
+                Log.e("Unable to render extra slot items");
+            }
+            if(Config.betterLogging) {
+                if (persistentPlayer.hasCapability(CapabilityExtra.CAPABILITY, null)) {
+                    Log.i("Modular Warfare extra slots successfully applied to persistent player!");
+                } else {
+                    Log.e("Failed to apply Modular Warfare extra slots to persistent player");
+                }
+            }
         }
         persistentPlayer.setPosition(player.posX, player.posY, player.posZ);
         persistentPlayer.rotationYaw = player.rotationYaw;
@@ -118,14 +143,18 @@ public class PersistentPlayerEntity extends EntityCreature {
         super.onDeath(cause);
 
         CommonProxy.PLAYER_EVENTS.updatePersistentPlayerLocation(this, p -> {
-            if(Config.betterLogging){
-                Log.i("Persistent player killed");
-            }
             p.setHealth(0F);
+            if(Loader.isModLoaded("modularwarfare")){
+                MWCompat mwCompat = new MWCompat();
+                mwCompat.mwDropSlots(p);
+            }
             for (int i = 0; i < p.inventory.getSizeInventory(); i++) {
                 ItemStack stackInSlot = p.inventory.getStackInSlot(i);
                 p.inventory.removeStackFromSlot(i);
                 entityDropItem(stackInSlot, 0F);
+            }
+            if(Config.betterLogging){
+                Log.i("Persistent player killed");
             }
         });
     }
