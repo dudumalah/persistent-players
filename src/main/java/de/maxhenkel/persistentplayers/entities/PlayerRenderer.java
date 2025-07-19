@@ -60,7 +60,7 @@ public class PlayerRenderer extends RenderLivingBase<PersistentPlayerEntity> {
         } else {
             mainModel = playerModel;
             setModelVisibilities(entity, playerModel);
-            initLayers(playerModelSmallArms);
+            initLayers(playerModel);
         }
 
         super.doRender(entity, x, y, z, entityYaw, partialTicks);
