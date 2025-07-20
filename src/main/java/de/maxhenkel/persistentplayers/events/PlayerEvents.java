@@ -75,7 +75,6 @@ public class PlayerEvents {
             }
         }
     }
-
     public boolean shouldPersist(EntityPlayerMP player) {
         if (player.getServerWorld().getMinecraftServer().isSinglePlayer()) {
             return false;

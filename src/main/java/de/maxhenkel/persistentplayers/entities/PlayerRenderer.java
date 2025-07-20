@@ -4,6 +4,10 @@ import com.modularwarfare.client.model.FakeLayerBipedArmor;
 import com.modularwarfare.client.model.layers.RenderLayerHeldGun;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
+import de.maxhenkel.persistentplayers.Log;
+import de.maxhenkel.persistentplayers.compat.MWFakeBackpackLayer;
+import de.maxhenkel.persistentplayers.compat.MWFakeResetLayers;
+import de.maxhenkel.persistentplayers.compat.MWFakeVestLayer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.ModelPlayer;
 import net.minecraft.client.network.NetworkPlayerInfo;
@@ -126,10 +130,14 @@ public class PlayerRenderer extends RenderLivingBase<PersistentPlayerEntity> {
         addLayer(new LayerHeldItem(this));
         addLayer(new LayerElytra(this));
         addLayer(new LayerCustomHead(modelPlayer.bipedHead));
+
         //MW layers
-        if(Loader.isModLoaded("modularwarfare")){
-            addLayer(new RenderLayerHeldGun(this));
+        if(Loader.isModLoaded("modularwarfare")) {
+            addLayer(new MWFakeResetLayers(this));
             addLayer(new FakeLayerBipedArmor(this));
+            addLayer(new MWFakeBackpackLayer(this, modelPlayer.bipedBodyWear));
+            addLayer(new MWFakeVestLayer(this, modelPlayer.bipedBodyWear));
+            addLayer(new RenderLayerHeldGun(this));
         }
     }
 
