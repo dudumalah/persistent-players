@@ -13,6 +13,7 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 public class MWCompat {
@@ -35,6 +36,22 @@ public class MWCompat {
                     new ResourceLocation("modularwarfare", "extraslots"),
                     new ExtraContainerProvider(container)
             );
+        }
+    }
+    @SubscribeEvent
+    public void onTracking(PlayerEvent.StartTracking event){
+        if (!(event.getTarget() instanceof PersistentPlayerEntity)) {
+            return;
+        }
+        sync((PersistentPlayerEntity) event.getTarget());
+    }
+    public void sync(PersistentPlayerEntity persistentPlayer) {
+        IExtraItemHandler extra = persistentPlayer.getCapability(CapabilityExtra.CAPABILITY, null);
+        if (extra == null) {
+            return;
+        }
+        for (int slot = 0; slot < extra.getSlots(); slot++) {
+            MWNetworkHandler.INSTANCE.sendToAllTracking(new MWSyncExtraSlots(persistentPlayer, slot, ((IExtraItemHandler) persistentPlayer.getCapability((Capability) CapabilityExtra.CAPABILITY, (EnumFacing) null)).getStackInSlot(slot)), persistentPlayer);
         }
     }
 }
