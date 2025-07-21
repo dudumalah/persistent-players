@@ -4,6 +4,7 @@ import com.mojang.authlib.GameProfile;
 import de.maxhenkel.persistentplayers.Config;
 import de.maxhenkel.persistentplayers.Log;
 import de.maxhenkel.persistentplayers.entities.PersistentPlayerEntity;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.management.PlayerInteractionManager;
 import net.minecraft.world.WorldServer;
@@ -13,6 +14,8 @@ import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -28,23 +31,29 @@ public class PlayerEvents {
         if (player.getServerWorld().getMinecraftServer().isSinglePlayer()) {
             return;
         }
-
-        boolean foundPlayer = false;
+        boolean foundAny = false;
         for (WorldServer world : player.getServerWorld().getMinecraftServer().worlds) {
-            Optional<PersistentPlayerEntity> persistentPlayer = findPersistentPlayer(world, player.getUniqueID());
-
-            if (persistentPlayer.isPresent()) {
-                PersistentPlayerEntity p = persistentPlayer.get();
-                p.toPlayer(player);
-                p.setDead();
-                foundPlayer = true;
-                break;
+            List<Entity> toRemove = new ArrayList<>();
+            for (Entity entity : world.loadedEntityList) {
+                if (entity instanceof PersistentPlayerEntity) {
+                    PersistentPlayerEntity persistentPlayer = (PersistentPlayerEntity) entity;
+                    if (persistentPlayer.getPlayerUUID().isPresent() && persistentPlayer.getPlayerUUID().get().equals(player.getUniqueID())) {
+                        persistentPlayer.toPlayer(player);
+                        toRemove.add(persistentPlayer);
+                        foundAny = true;
+                    }
+                }
+            }
+            for (Entity e : toRemove) {
+                if(Config.betterLogging){
+                    Log.i("Killing:"+e.getDisplayName());
+                }
+                e.setDead();
             }
         }
-        if (!foundPlayer) {
+        if (!foundAny) {
             Log.e("Failed to find persisted player. Defaulting to vanilla spawning.");
         }
-
     }
 
     @SubscribeEvent(priority = EventPriority.NORMAL)
@@ -59,6 +68,20 @@ public class PlayerEvents {
         if (!shouldPersist(player)) {
             if (Config.betterLogging) {
                 Log.e("Player is not Persistent player");
+            }
+            return;
+        }
+        boolean foundPlayer = false;
+        for(WorldServer world : player.getServerWorld().getMinecraftServer().worlds){
+            Optional<PersistentPlayerEntity> playerCheck = findPersistentPlayer(world, player.getUniqueID());
+            if(playerCheck.isPresent()){
+                foundPlayer = true;
+                break;
+            }
+        }
+        if(foundPlayer){
+            if (Config.betterLogging) {
+                Log.w("Avoiding duplication!");
             }
             return;
         }
